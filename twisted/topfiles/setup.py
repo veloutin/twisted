@@ -32,30 +32,12 @@ def _isCPython():
             return implementation == "CPython"
         except AttributeError:
             pass
-
-        # Pythons older than 2.5 require us to try and guess by
-        # elimination. If you're on such an old, obscure version of
-        # Python, I can't help you.
-        
+      
         # Are we on Pypy?
         if "__pypy__" in sys.modules:
             return False
 
-        # Guess not. Are we on Jython?
-        try:
-            platform.java_ver 
-            return False
-        except AttributeError:
-            pass
-
-        # Guess not. Are we on IronPython?
-        try:
-            import clr
-            return False
-        except ImportError:
-            pass
-        
-        # Well, then we're *probably* on CPython.
+        # No? Well, then we're *probably* on CPython.
         return True
 
 
