@@ -19,27 +19,73 @@ from twisted.python.dist import setup, ConditionalExtension as Extension
 from twisted.python.dist import getPackages, getDataFiles, getScripts
 from twisted.python.dist import twisted_subprojects
 
+import platform
+
+
+def _isCPython():
+    try:
+        return platform.python_implementation() == "CPython"
+    except AttributeError:
+        # For 2.5:
+        try:
+            implementation, _, _ = sys.subversion
+            return implementation == "CPython"
+        except AttributeError:
+            pass
+
+        # Pythons older than 2.5 require us to try and guess by
+        # elimination. If you're on such an old, obscure version of
+        # Python, I can't help you.
+        
+        # Are we on Pypy?
+        if "__pypy__" in sys.modules:
+            return False
+
+        # Guess not. Are we on Jython?
+        try:
+            platform.java_ver 
+            return False
+        except AttributeError:
+            pass
+
+        # Guess not. Are we on IronPython?
+        try:
+            import clr
+            return False
+        except ImportError:
+            pass
+        
+        # Well, then we're *probably* on CPython.
+        return True
+
+
+isCPython = _isCPython()
+
+
+def hasEpoll(builder):
+    builder._check_header("sys/epoll.h")
 
 
 extensions = [
     Extension("twisted.test.raiser",
-              ["twisted/test/raiser.c"]),
+              ["twisted/test/raiser.c"],
+              condition=lambda _: isCPython),
 
     Extension("twisted.python._epoll",
               ["twisted/python/_epoll.c"],
-              condition=lambda builder: builder._check_header("sys/epoll.h")),
+              condition=lambda builder: isCPython and hasEpoll(builder)),
 
     Extension("twisted.internet.iocpreactor.iocpsupport",
               ["twisted/internet/iocpreactor/iocpsupport/iocpsupport.c",
                "twisted/internet/iocpreactor/iocpsupport/winsock_pointers.c"],
               libraries=["ws2_32"],
-              condition=lambda builder: sys.platform == "win32"),
+              condition=lambda _: isCPython and sys.platform == "win32"),
 
     Extension("twisted.python._initgroups",
               ["twisted/python/_initgroups.c"]),
     Extension("twisted.internet._sigchld",
               ["twisted/internet/_sigchld.c"],
-              condition=lambda builder: sys.platform != "win32"),
+              condition=lambda _: sys.platform != "win32"),
 ]
 
 # Figure out which plugins to include: all plugins except subproject ones
