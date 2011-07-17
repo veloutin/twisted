@@ -6,7 +6,8 @@
 Distutils installer for Twisted.
 """
 
-import os, sys
+import os
+import sys
 
 if sys.version_info < (2,3):
     print >>sys.stderr, "You must use at least Python 2.3 for Twisted"
@@ -17,51 +18,23 @@ if os.path.exists('twisted'):
 from twisted import copyright
 from twisted.python.dist import setup, ConditionalExtension as Extension
 from twisted.python.dist import getPackages, getDataFiles, getScripts
-from twisted.python.dist import twisted_subprojects
-
-import platform
-
-
-def _isCPython():
-    try:
-        return platform.python_implementation() == "CPython"
-    except AttributeError:
-        # For 2.5:
-        try:
-            implementation, _, _ = sys.subversion
-            return implementation == "CPython"
-        except AttributeError:
-            pass
-      
-        # Are we on Pypy?
-        if "__pypy__" in sys.modules:
-            return False
-
-        # No? Well, then we're *probably* on CPython.
-        return True
-
-
-isCPython = _isCPython()
-
-
-def hasEpoll(builder):
-    builder._check_header("sys/epoll.h")
+from twisted.python.dist import twisted_subprojects, _isCPython, _hasEpoll
 
 
 extensions = [
     Extension("twisted.test.raiser",
               ["twisted/test/raiser.c"],
-              condition=lambda _: isCPython),
+              condition=lambda _: _isCPython),
 
     Extension("twisted.python._epoll",
               ["twisted/python/_epoll.c"],
-              condition=lambda builder: isCPython and hasEpoll(builder)),
+              condition=lambda builder: _isCPython and _hasEpoll(builder)),
 
     Extension("twisted.internet.iocpreactor.iocpsupport",
               ["twisted/internet/iocpreactor/iocpsupport/iocpsupport.c",
                "twisted/internet/iocpreactor/iocpsupport/winsock_pointers.c"],
               libraries=["ws2_32"],
-              condition=lambda _: isCPython and sys.platform == "win32"),
+              condition=lambda _: _isCPython and sys.platform == "win32"),
 
     Extension("twisted.python._initgroups",
               ["twisted/python/_initgroups.c"]),
