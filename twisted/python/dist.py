@@ -396,7 +396,7 @@ def _checkCPython(sys=sys, platform=platform):
             return implementation == "CPython"
         except AttributeError:
             pass
-      
+
         # Are we on Pypy?
         if "__pypy__" in sys.modules:
             return False
