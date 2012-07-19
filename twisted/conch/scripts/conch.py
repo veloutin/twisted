@@ -445,6 +445,20 @@ class SSHSession(channel.SSHChannel):
         exitStatus = int(struct.unpack('>L', data)[0])
         log.msg('exit status: %s' % exitStatus)
 
+    def request_exit_signal(self, data):
+        ''' Handle exit signal. Data structure:
+        string    signal name (without the "SIG" prefix)
+        boolean   core dumped
+        string    error message in ISO-10646 UTF-8 encoding
+        string    language tag [RFC3066]
+        '''
+        signal, data = common.getNS(data)
+        coreDumped = struct.unpack('>?', data[0])[0]
+        message, language, data = common.getNS(data[1:], 2)
+        log.msg('exit signal: %s' % signal)
+        if message:
+            log.msg(message)
+
     def sendEOF(self):
         self.conn.sendEOF(self)
 
